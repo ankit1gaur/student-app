@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student App — Spring Boot + Render PostgreSQL</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: #e2e8f0;
+    }
+
+    /* ── Card ───────────────────────────────────────────────── */
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 24px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(99, 179, 237, 0.15);
+      border: 1px solid rgba(99, 179, 237, 0.3);
+      color: #63b3ed;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+
+    .badge::before { content: '●'; font-size: 8px; }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #f7fafc;
+      line-height: 1.2;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      font-size: 0.875rem;
+      color: #a0aec0;
+    }
+
+    /* ── Button ─────────────────────────────────────────────── */
+    .btn-fetch {
+      width: 100%;
+      padding: 0.9rem 1.5rem;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .btn-fetch:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-fetch:active:not(:disabled) { transform: translateY(0); }
+
+    .btn-fetch:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-icon { font-size: 1.1rem; transition: transform 0.4s; }
+    .btn-fetch.loading .btn-icon { animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Status Bar ─────────────────────────────────────────── */
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: #718096;
+      margin-bottom: 1.25rem;
+      min-height: 1.2rem;
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #718096;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+
+    .status-bar.success .status-dot { background: #68d391; }
+    .status-bar.error   .status-dot { background: #fc8181; }
+    .status-bar.loading .status-dot {
+      background: #63b3ed;
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── Student List ────────────────────────────────────────── */
+    .student-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .student-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      animation: slideIn 0.3s ease both;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .student-item:nth-child(1)  { animation-delay: 0.05s; }
+    .student-item:nth-child(2)  { animation-delay: 0.10s; }
+    .student-item:nth-child(3)  { animation-delay: 0.15s; }
+    .student-item:nth-child(4)  { animation-delay: 0.20s; }
+    .student-item:nth-child(5)  { animation-delay: 0.25s; }
+    .student-item:nth-child(6)  { animation-delay: 0.30s; }
+    .student-item:nth-child(7)  { animation-delay: 0.35s; }
+    .student-item:nth-child(8)  { animation-delay: 0.40s; }
+    .student-item:nth-child(9)  { animation-delay: 0.45s; }
+    .student-item:nth-child(10) { animation-delay: 0.50s; }
+
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .student-info { flex: 1; min-width: 0; }
+
+    .student-name {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f7fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .student-email {
+      font-size: 0.78rem;
+      color: #718096;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .student-id {
+      font-size: 0.7rem;
+      color: #4a5568;
+      font-family: monospace;
+      flex-shrink: 0;
+    }
+
+    /* ── Empty State ─────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: #4a5568;
+    }
+
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .empty-state p { font-size: 0.875rem; line-height: 1.5; }
+
+    /* ── Error State ─────────────────────────────────────────── */
+    .error-box {
+      background: rgba(252, 129, 129, 0.1);
+      border: 1px solid rgba(252, 129, 129, 0.3);
+      border-radius: 12px;
+      padding: 1rem;
+      color: #fc8181;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    /* ── Footer ─────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: #4a5568;
+    }
+
+    .footer span { color: #667eea; }
+  </style>
+</head>
+<body>
+  <div class="card">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="badge">Render PostgreSQL Connected</div>
+      <h1>🎓 Student Directory</h1>
+      <p class="subtitle">Powered by Spring Boot + Render PostgreSQL</p>
+    </div>
+
+    <!-- Fetch Button -->
+    <button class="btn-fetch" id="fetchBtn" onclick="fetchStudents()">
+      <span class="btn-icon">⚡</span>
+      <span class="btn-label">Fetch Random Students</span>
+    </button>
+
+    <!-- Status Bar -->
+    <div class="status-bar" id="statusBar">
+      <div class="status-dot"></div>
+      <span id="statusText">Click the button to load students from the database.</span>
+    </div>
+
+    <!-- Results Area -->
+    <div id="results">
+      <div class="empty-state">
+        <div class="icon">🗄️</div>
+        <p>No data loaded yet.<br>Hit the button to query Render PostgreSQL.</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      API: <span>GET /api/students/random</span> &nbsp;|&nbsp; DB: <span>Render PostgreSQL</span>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '/api/students/random';
+
+    async function fetchStudents() {
+      const btn        = document.getElementById('fetchBtn');
+      const statusBar  = document.getElementById('statusBar');
+      const statusText = document.getElementById('statusText');
+      const results    = document.getElementById('results');
+
+      // ── Loading State ───────────────────────────────────────
+      btn.disabled = true;
+      btn.classList.add('loading');
+      btn.querySelector('.btn-label').textContent = 'Fetching from DB…';
+
+      statusBar.className = 'status-bar loading';
+      statusText.textContent = 'Connecting to Render PostgreSQL…';
+      results.innerHTML = '';
+
+      try {
+        const start    = performance.now();
+        const response = await fetch(API_URL);
+        const elapsed  = Math.round(performance.now() - start);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} — ${response.statusText}`);
+        }
+
+        const students = await response.json();
+
+        // ── Success State ─────────────────────────────────────
+        statusBar.className = 'status-bar success';
+        statusText.textContent = `✓ Loaded ${students.length} students in ${elapsed}ms`;
+
+        if (students.length === 0) {
+          results.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">😕</div>
+              <p>No students found in the database.<br>The table might be empty.</p>
+            </div>`;
+        } else {
+          const items = students.map((s, i) => `
+            <li class="student-item">
+              <div class="avatar">${getInitials(s.name)}</div>
+              <div class="student-info">
+                <div class="student-name">${escapeHtml(s.name)}</div>
+                <div class="student-email">${escapeHtml(s.email || '—')}</div>
+              </div>
+              <div class="student-id">#${s.id}</div>
+            </li>`).join('');
+
+          results.innerHTML = `<ul class="student-list">${items}</ul>`;
+        }
+
+      } catch (err) {
+        // ── Error State ───────────────────────────────────────
+        statusBar.className = 'status-bar error';
+        statusText.textContent = 'Connection failed — check console for details';
+        console.error('API Error:', err);
+
+        results.innerHTML = `
+          <div class="error-box">
+            <strong>⚠️ Error:</strong> ${escapeHtml(err.message)}<br><br>
+            Make sure:<br>
+            • Spring Boot server is running on port 8080<br>
+            • <code>application.properties</code> has your Render DB credentials<br>
+            • The Render PostgreSQL database is reachable
+          </div>`;
+      } finally {
+        // ── Reset Button ──────────────────────────────────────
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        btn.querySelector('.btn-label').textContent = 'Fetch Random Students';
+      }
+    }
+
+    /** Returns up to 2 uppercase initials from a full name. */
+    function getInitials(name = '') {
+      return name.split(' ').slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+    }
+
+    /** Prevents XSS by escaping HTML special characters. */
+    function escapeHtml(str = '') {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
