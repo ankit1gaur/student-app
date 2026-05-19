@@ -14,6 +14,6 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      * Returns 10 random student names from the database.
      * Uses PostgreSQL's random() function for true randomness.
      */
-    @Query(value = "SELECT * FROM students ORDER BY RANDOM() LIMIT 10", nativeQuery = true)
+    @Query(value = "SELECT * FROM students", nativeQuery = true)
     List<Student> findRandomStudents();
 }
