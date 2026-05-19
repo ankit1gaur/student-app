@@ -27,7 +27,7 @@ public class StudentService {
             log.info("No students found — seeding database with sample data...");
 
             List<Student> students = List.of(
-                new Student("Aarav Sharma",      "aarav.sharma@college.in"),
+                new Student("ISHU PRANJALLLL Sharma",      "aarav.sharma@college.in"),
                 new Student("Priya Patel",       "priya.patel@college.in"),
                 new Student("Rohan Mehta",       "rohan.mehta@college.in"),
                 new Student("Ananya Iyer",       "ananya.iyer@college.in"),
